@@ -1,0 +1,167 @@
+% CREATION: 030422 3:35PM
+
+% VARIABLES
+%   angles
+%     num_samples_per_range
+%     mode_data
+%     mean_data
+%     stdev_data
+%     error_data
+%   num_detected_samples
+%   num_true_detected_samples
+%     true_mean_data
+%     true_stdv_data
+%     true_error_data
+%   prob_detect
+%   false_alarm
+
+clc; clear; close all;
+
+imported_data = csvread(input('File name: ')); % csvread('trial1.csv');
+num_angles = size(imported_data, 1);
+
+data = {};
+
+% everything is ordered, 5 to 95
+angles = NaN(1,num_angles);
+num_samples_per_angle = NaN(1,num_angles);
+mode_data = NaN(1,num_angles);
+mean_data = NaN(1,num_angles);
+stdev_data = NaN(1,num_angles);
+error_data = NaN(1,num_angles);
+
+num_detected_samples = NaN(1,num_angles);
+
+% separate imported data and collect high level stats
+for ind = 1:size(imported_data,1)
+    % get 0 index range
+    angles(ind) = imported_data(ind,1);
+    
+    % get 1 index number of samples
+    num_samples_per_angle(ind) = imported_data(ind,2);
+    
+    % vertically concatenate sample values, removing 0s
+    concise_samples = imported_data(ind,3:end);
+    concise_samples(concise_samples == 0) = [];
+    data{end+1} = concise_samples;
+    
+    % collect full-sample statistics
+    mode_data(ind) = mode(data{end});
+    num_detected_samples(ind) = size(data{ind},2);
+end
+
+% get number of detections per range
+
+for ind = 1:size(data,2)
+    num_detected_samples(ind) = size(data{ind},2);
+end
+
+% remove false detections per range
+% get number of true detections per range
+% get true mean and stdev per range (after removing false alarms)
+num_true_detected_samples = NaN(1,num_angles);
+true_mean_data = NaN(1,num_angles);
+true_stdev_data = NaN(1,num_angles);
+true_error_data = NaN(1,num_angles);
+for range_ind = 1:size(data,2)
+    % bin range error is [-0.0275, 0.0275]
+    min = mode_data(range_ind) - 0.0275;
+    max = mode_data(range_ind) + 0.0275;
+        
+    for sample_ind = flip(1:size(data{range_ind},2)) % back-iterate
+        sample = data{range_ind}(sample_ind);
+        
+        if (~((sample >=min) && (sample <= max)))
+            data{range_ind}(sample_ind) = [];
+        end
+    end
+    
+    num_true_detected_samples(range_ind) = size(data{range_ind},2);
+    true_mean_data(range_ind) = mean(data{range_ind});
+    true_stdev_data(range_ind) = std(data{range_ind});
+    true_error_data(range_ind) = ...
+        true_mean_data(range_ind) - angles(range_ind)/100;
+end
+
+% calculate probability of detection
+% calculate probability of false alarm
+prob_detect = NaN(1,num_angles);
+false_alarm = NaN(1,num_angles);
+for ind = 1:size(data,2)
+    total = num_samples_per_angle(ind);
+    actual = num_true_detected_samples(ind);
+    fake = num_detected_samples(ind) - num_true_detected_samples(ind);
+    
+    prob_detect(ind) = actual / total;
+    false_alarm(ind) = fake / total;
+end
+
+%% PLOTTING
+
+% REFERENCE
+% figure;
+% plot(xvalues,yvalues,'-b','LineWidth',2);
+% hXLabel  = xlabel('x axis with units');
+% hYLabel  = ylabel('y-axis with units');
+% set(gca, ...
+%   'Box'         , 'off'     , ...
+%   'TickDir'     , 'out'     , ...
+%   'TickLength'  , [.03 .03] , ...
+%   'XMinorTick'  , 'off'      , ...
+%   'YMinorTick'  , 'off'      , ...
+%   'XGrid'       , 'on'      , ...
+%   'YGrid'       , 'on'      , ...
+%   'XColor'      , [.3 .3 .3], ...
+%   'YColor'      , [.3 .3 .3], ...
+%   'XTick'       ,0:5:100, ...
+%   'YTick'       , 0:5:100, ...
+%   'LineWidth'   , 2         );
+
+% -------------------------------------------------------------------------
+% ORIENTATION - PROBABILITY OF DETECTION (PER ANGLE)
+% -------------------------------------------------------------------------
+figure;
+plot(angles,prob_detect,'ob','LineWidth',2);
+hXLabel  = xlabel('Range (cm)');
+hYLabel  = ylabel('Probability of Detection');
+set(gca, ...
+  'Box'         , 'off'     , ...
+  'TickDir'     , 'out'     , ...
+  'TickLength'  , [.03 .03] , ...
+  'XMinorTick'  , 'off'      , ...
+  'YMinorTick'  , 'off'      , ...
+  'XGrid'       , 'on'      , ...
+  'YGrid'       , 'on'      , ...
+  'XColor'      , [.3 .3 .3], ...
+  'YColor'      , [.3 .3 .3], ...
+  'XTick'       , angles, ...
+  'YTick'       , 0:0.1:1, ...
+  'LineWidth'   , 2         );
+
+% -------------------------------------------------------------------------
+% ORIENTATION - PROBABILITY OF FALSE ALARM (PER ANGLE)
+% -------------------------------------------------------------------------
+figure;
+plot(angles,false_alarm,'ob','LineWidth',2);
+hXLabel  = xlabel('Range (cm)');
+hYLabel  = ylabel('Probability of False Alarm');
+set(gca, ...
+  'Box'         , 'off'     , ...
+  'TickDir'     , 'out'     , ...
+  'TickLength'  , [.03 .03] , ...
+  'XMinorTick'  , 'off'      , ...
+  'YMinorTick'  , 'off'      , ...
+  'XGrid'       , 'on'      , ...
+  'YGrid'       , 'on'      , ...
+  'XColor'      , [.3 .3 .3], ...
+  'YColor'      , [.3 .3 .3], ...
+  'XTick'       , angles, ...
+  'YTick'       , 0:0.1:1, ...
+  'LineWidth'   , 2         );
+
+
+% need to do error as well
+% scatter plot of each estimataed range
+% true on x, recorded on y
+% exponential fit for function? (e^(-alpha)) vs. range
+% based on SNR - decays by roughly 
