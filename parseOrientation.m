@@ -1,4 +1,4 @@
-% CREATION: 030422 3:35PM
+% CREATION: 030422 7:41PM
 
 % VARIABLES
 %   angles
@@ -122,7 +122,7 @@ end
 % -------------------------------------------------------------------------
 figure;
 plot(angles,prob_detect,'ob','LineWidth',2);
-hXLabel  = xlabel('Range (cm)');
+hXLabel  = xlabel('Angle (degrees)');
 hYLabel  = ylabel('Probability of Detection');
 set(gca, ...
   'Box'         , 'off'     , ...
@@ -143,7 +143,7 @@ set(gca, ...
 % -------------------------------------------------------------------------
 figure;
 plot(angles,false_alarm,'ob','LineWidth',2);
-hXLabel  = xlabel('Range (cm)');
+hXLabel  = xlabel('Angle (Degrees)');
 hYLabel  = ylabel('Probability of False Alarm');
 set(gca, ...
   'Box'         , 'off'     , ...
