@@ -1,5 +1,3 @@
-% CREATION: 030422 2:34PM
-
 % VARIABLES
 %   ranges
 %     num_samples_per_range
@@ -16,6 +14,8 @@
 %   false_alarm
 %   range_offset
 %   corrected_false_det_data
+
+% '../../data-orss-measurements/030222 1D Ranging/full-data-range 030422.csv'
 
 clc; clear; close all;
 
@@ -34,10 +34,10 @@ error_data = NaN(1,num_ranges);
 
 % separate imported data and collect high level stats
 for ind = 1:size(imported_data,1)
-    % get 0 index range
+    % get index0 - range
     ranges(ind) = imported_data(ind,1);
     
-    % get 1 index number of samples
+    % get index1 - number of samples
     num_samples_per_range(ind) = imported_data(ind,2);
     
     % vertically concatenate sample values, removing 0s
@@ -109,6 +109,7 @@ end
 
 % calculate intensities of each unique "range" measurement
 intensities = {};
+smallest_intensity = -1;
 for ind = 1:num_ranges
     % unique_measurements = unique(corrected_false_det_data{range_ind});
     % count_per_val = NaN(1,size(unique_measurements));
@@ -119,7 +120,52 @@ for ind = 1:num_ranges
     % intensities{end+1} = []
     [count,val] = groupcounts(corrected_false_det_data{ind}');
     intensities{end+1} = count / sum(count);
+    smallest_intensity = min([ smallest_intensity, intensities{end}' ]);
 end
+
+% % trying to calculate log intensity
+% % produces a pretty shawty graph
+% log_intensities = {};
+% for ind = 1:num_ranges
+%     intensities{ind} = intensities{ind} ./ smallest_intensity;
+%     log_intensities{end+1} = sign(intensities{ind}).*log(abs(intensities{ind}));
+%     log_intensities{end} = log_intensities{end} ./ max(log_intensities{end});
+% end
+
+%% STATS
+
+absolute_corrected_error = mode_data - range_offset;
+relative_percent_error = (absolute_corrected_error - ranges./100) ...
+    / (ranges ./ 100);
+
+max_rel_percent_err = max(relative_percent_error)
+min_rel_percent_err = min(relative_percent_error)
+
+max_stdev = max(stdev_data)
+min_stdev = min(stdev_data)
+
+max_prob_det = max(prob_detect)
+min_prob_det = min(prob_detect)
+max_fa = max(false_alarm)
+min_fa = min(false_alarm)
+
+
+%% PRINTING VALUES
+
+display(ranges);
+display(num_samples_per_range);
+display(mode_data);
+display(mean_data);
+display(stdev_data);
+display(error_data);
+display(num_detected_samples);
+display(num_true_detected_samples);
+display(true_mean_data);
+display(true_stdev_data);
+display(true_error_data);
+display(prob_detect);
+display(false_alarm);
+display(range_offset);
 
 %% PLOTTING
 
@@ -188,9 +234,9 @@ set(gca, ...
 % RANGE - AVERAGE ERROR PER RANGE 
 % -------------------------------------------------------------------------
 figure;
-plot(ranges,error_data,'ob','LineWidth',2);
+plot(ranges,error_data,'-ob','LineWidth',2);
 hXLabel  = xlabel('Range (cm)');
-hYLabel  = ylabel('Average Error (cm)');
+hYLabel  = ylabel('Average Error (m)');
 set(gca, ...
   'Box'         , 'off'     , ...
   'TickDir'     , 'out'     , ...
@@ -208,56 +254,56 @@ set(gca, ...
 % -------------------------------------------------------------------------
 % RANGE - SCATTER OF SAMPLES (PER RANGE)
 % -------------------------------------------------------------------------
-% figure; hold on;
-% for ind = 1:length(ranges)
-%     range = ranges(ind);
-%     unique_vals = sort(unique(corrected_false_det_data{ind}));
-%     % x = zeros(1,length(unique_vals)) + ranges(ind);
-%     % s = scatter(x,unique_vals,'filled',  'MarkerFaceAlpha', intensities{ind});
-%     % plot(range,corrected_false_det_data{ind},'.b','LineWidth',2);
-%     for sample_ind = 1:length(unique_vals)
-%         sample = unique_vals(sample_ind);
-%         scatter(range,sample,25,'b','filled','MarkerFaceAlpha',...
-%             intensities{ind}(sample_ind));
-%     end
-% end
-% hXLabel  = xlabel('Range (cm)');
-% hYLabel  = ylabel('Range Samples by Intensity');
-% set(gca, ...
-%   'Box'         , 'off'     , ...
-%   'TickDir'     , 'out'     , ...
-%   'TickLength'  , [.03 .03] , ...
-%   'XMinorTick'  , 'off'      , ...
-%   'YMinorTick'  , 'off'      , ...
-%   'XGrid'       , 'on'      , ...
-%   'YGrid'       , 'on'      , ...
-%   'XColor'      , [.3 .3 .3], ...
-%   'YColor'      , [.3 .3 .3], ...
-%   'XTick'       , [0,ranges,100], ...
-%   'YTick'       , 0:0.1:1, ...
-%   'LineWidth'   , 2         );
-% hold off;
-
 figure; hold on;
 for ind = 1:length(ranges)
     range = ranges(ind);
-    plot(range,corrected_false_det_data{ind},'.b','LineWidth',2);
-    hXLabel  = xlabel('Range (cm)');
-    hYLabel  = ylabel('Range Scatter per Scatter');
-    set(gca, ...
-      'Box'         , 'off'     , ...
-      'TickDir'     , 'out'     , ...
-      'TickLength'  , [.03 .03] , ...
-      'XMinorTick'  , 'off'      , ...
-      'YMinorTick'  , 'off'      , ...
-      'XGrid'       , 'on'      , ...
-      'YGrid'       , 'on'      , ...
-      'XColor'      , [.3 .3 .3], ...
-      'YColor'      , [.3 .3 .3], ...
-      'XTick'       , [0,ranges,100], ...
-      'YTick'       , 0:0.1:1, ...
-      'LineWidth'   , 2         );
+    unique_vals = sort(unique(corrected_false_det_data{ind}));
+    % x = zeros(1,length(unique_vals)) + ranges(ind);
+    % s = scatter(x,unique_vals,'filled',  'MarkerFaceAlpha', intensities{ind});
+    % plot(range,corrected_false_det_data{ind},'.b','LineWidth',2);
+    for sample_ind = 1:length(unique_vals)
+        sample = unique_vals(sample_ind);
+        scatter(range,sample,25,'b','filled','MarkerFaceAlpha',...
+            intensities{ind}(sample_ind));
+    end
 end
+hXLabel  = xlabel('Range (cm)');
+hYLabel  = ylabel('Range Samples by Intensity');
+set(gca, ...
+  'Box'         , 'off'     , ...
+  'TickDir'     , 'out'     , ...
+  'TickLength'  , [.03 .03] , ...
+  'XMinorTick'  , 'off'      , ...
+  'YMinorTick'  , 'off'      , ...
+  'XGrid'       , 'on'      , ...
+  'YGrid'       , 'on'      , ...
+  'XColor'      , [.3 .3 .3], ...
+  'YColor'      , [.3 .3 .3], ...
+  'XTick'       , [0,ranges,100], ...
+  'YTick'       , 0:0.1:1, ...
+  'LineWidth'   , 2         );
+hold off;
+
+% figure; hold on;
+% for ind = 1:length(ranges)
+%     range = ranges(ind);
+%     plot(range,unique(corrected_false_det_data{ind}),'.b','LineWidth',2);
+%     hXLabel  = xlabel('Actual Range (cm)');
+%     hYLabel  = ylabel('Measured Range Points (cm)');
+%     set(gca, ...
+%       'Box'         , 'off'     , ...
+%       'TickDir'     , 'out'     , ...
+%       'TickLength'  , [.03 .03] , ...
+%       'XMinorTick'  , 'off'      , ...
+%       'YMinorTick'  , 'off'      , ...
+%       'XGrid'       , 'on'      , ...
+%       'YGrid'       , 'on'      , ...
+%       'XColor'      , [.3 .3 .3], ...
+%       'YColor'      , [.3 .3 .3], ...
+%       'XTick'       , [0,ranges,100], ...
+%       'YTick'       , 0:0.1:1, ...
+%       'LineWidth'   , 2         );
+% end
 
 % need to do error as well
 % scatter plot of each estimataed range

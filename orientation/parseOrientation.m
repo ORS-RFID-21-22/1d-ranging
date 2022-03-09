@@ -1,19 +1,13 @@
-% CREATION: 030422 7:41PM
-
 % VARIABLES
 %   angles
-%     num_samples_per_range
+%     num_samples_per_angle
 %     mode_data
-%     mean_data
-%     stdev_data
-%     error_data
 %   num_detected_samples
 %   num_true_detected_samples
-%     true_mean_data
-%     true_stdv_data
-%     true_error_data
 %   prob_detect
 %   false_alarm
+
+%  '../../data-orss-measurements/030422 1D Orientation/full-data-orientation 030422.csv'
 
 clc; clear; close all;
 
@@ -26,18 +20,15 @@ data = {};
 angles = NaN(1,num_angles);
 num_samples_per_angle = NaN(1,num_angles);
 mode_data = NaN(1,num_angles);
-mean_data = NaN(1,num_angles);
-stdev_data = NaN(1,num_angles);
-error_data = NaN(1,num_angles);
 
 num_detected_samples = NaN(1,num_angles);
 
 % separate imported data and collect high level stats
 for ind = 1:size(imported_data,1)
-    % get 0 index range
+    % get index0 - angle
     angles(ind) = imported_data(ind,1);
     
-    % get 1 index number of samples
+    % get index1 - number of samples
     num_samples_per_angle(ind) = imported_data(ind,2);
     
     % vertically concatenate sample values, removing 0s
@@ -51,36 +42,27 @@ for ind = 1:size(imported_data,1)
 end
 
 % get number of detections per range
-
 for ind = 1:size(data,2)
     num_detected_samples(ind) = size(data{ind},2);
 end
 
 % remove false detections per range
 % get number of true detections per range
-% get true mean and stdev per range (after removing false alarms)
 num_true_detected_samples = NaN(1,num_angles);
-true_mean_data = NaN(1,num_angles);
-true_stdev_data = NaN(1,num_angles);
-true_error_data = NaN(1,num_angles);
 for range_ind = 1:size(data,2)
     % bin range error is [-0.0275, 0.0275]
-    min = mode_data(range_ind) - 0.0275;
-    max = mode_data(range_ind) + 0.0275;
+    minVal = mode_data(range_ind) - 0.0275;
+    maxVal = mode_data(range_ind) + 0.0275;
         
     for sample_ind = flip(1:size(data{range_ind},2)) % back-iterate
         sample = data{range_ind}(sample_ind);
         
-        if (~((sample >=min) && (sample <= max)))
+        if (~((sample >=minVal) && (sample <= maxVal)))
             data{range_ind}(sample_ind) = [];
         end
     end
     
     num_true_detected_samples(range_ind) = size(data{range_ind},2);
-    true_mean_data(range_ind) = mean(data{range_ind});
-    true_stdev_data(range_ind) = std(data{range_ind});
-    true_error_data(range_ind) = ...
-        true_mean_data(range_ind) - angles(range_ind)/100;
 end
 
 % calculate probability of detection
@@ -95,6 +77,21 @@ for ind = 1:size(data,2)
     prob_detect(ind) = actual / total;
     false_alarm(ind) = fake / total;
 end
+
+% from 1d ranging measurements
+prob_detect(7) = 0.9030;
+false_alarm(7) = 0.0091;
+
+%% PRINTING VALS
+
+% VARIABLES
+display(angles);
+display(num_samples_per_angle);
+display(mode_data);
+display(num_detected_samples);
+display(num_true_detected_samples);
+display(prob_detect);
+display(false_alarm);
 
 %% PLOTTING
 
@@ -156,7 +153,7 @@ set(gca, ...
   'XColor'      , [.3 .3 .3], ...
   'YColor'      , [.3 .3 .3], ...
   'XTick'       , angles, ...
-  'YTick'       , 0:0.1:1, ...
+  'YTick'       , 0:max(false_alarm)/10:max(false_alarm), ...
   'LineWidth'   , 2         );
 
 
