@@ -1,5 +1,3 @@
-# CREATION: 030422 12:40PM
-
 rangeValMapping = { 5:0.1307861328125135,
 					10:0.18310058593751322,
 					15:0.23541503906251293,
@@ -20,37 +18,40 @@ rangeValMapping = { 5:0.1307861328125135,
 					90:0.9939746093750088,
 					95:1.0462890625000085 }
 
+angleInd = { -30:0,
+			 -25:1,
+			 -20:2,
+			 -15:3,
+			 -10:4,
+			  -5:5,
+			   0:6,
+			   5:7,
+			  10:8,
+			  15:9,
+			  20:10,
+			  25:11,
+			  30:12 }
+
 import os
 import csv
 
-csv_file_name = raw_input('CSV File Name: ')
-# csv_file_name = str(input('CSV File Name: '))
+csv_file_name = str(input('CSV File Name: '))
 # csv_file_name = '\'' + csv_file_name + '.csv\''
 
 files_noReset = []
 files_insufficientSamples = []
 num_insufficientSamples = []
 
-
-# /mnt/c/Users/MC2/Documents/GTSpring22/ORS/orss/data-orss-measurements/032922\ 1D\ Ranging/range-new-peak 033122.csv
-
-useDefaultCWD = raw_input('Use CWD? (Y/N): ')
-if (useDefaultCWD is ('Y' or 'y')):
-	directory = os.getcwd() # gets current directory of file
-else:
-	directory = raw_input('Path to use: ')
-
-# print(directory)
-# input('cancel')
-
-
+directory = os.getcwd() # gets current directory of file
 
 # temporary to store all samples for all ranges
 DATA_ARRAY = []
 
+angles = [-30,-25,-20,-15,-10,-5,0,5,10,15,20,25,30]
+
 # first index of each array is its range
 # second index of each array is total number of samples
-for idx, key in enumerate(sorted(rangeValMapping.keys())):
+for idx, key in enumerate(angles):
 	arr = [key]
 	DATA_ARRAY.append(arr)
 	DATA_ARRAY[idx].append(0) # placeholder for total samples
@@ -83,7 +84,7 @@ for filename in os.listdir(directory):
 
 		# if second char is a 'c' then we're looking at 5cm
 		# else get the first 2 digits of the filename as the range
-		file_range = (5) if (filename[1] is 'c') else (int(filename[:2]))
+		file_angle = int(filename.split('deg')[0])
 
 		# check if file has multiple log sets
 		if (file_string.count('Reset count') == 0):
@@ -118,7 +119,7 @@ for filename in os.listdir(directory):
 		if not isProblemFile:
 			# add total number of samples from this log to the overall data array
 			# placed in second index of the corresponding file range array
-			DATA_ARRAY[file_range/5 - 1][1] = DATA_ARRAY[file_range/5 - 1][1] + file_string.count('num detected')
+			DATA_ARRAY[angleInd.get(file_angle)][1] = DATA_ARRAY[angleInd.get(file_angle)][1] + file_string.count('num detected')
 
 			# look at each line in all samples
 			sample_lines = file_string.split('\n')
@@ -130,7 +131,11 @@ for filename in os.listdir(directory):
 				else:
 					# get range value on each line and convert to float in DATA_ARRAY
 					sample_lines[idx] = sample_lines[idx].split('tag range: ')[-1]
-					DATA_ARRAY[file_range/5 - 1].append(float(sample_lines[idx]))
+					DATA_ARRAY[angleInd.get(file_angle)].append(float(sample_lines[idx]))
+
+					# will always have commas separating the ranges
+					# e.g., for n tag frequencies, n-1 commas such that <n detections shows
+						# " , , <range> , , ..."
 
 			if print_num_times: # debug
 				print(DATA_ARRAY) # debug
