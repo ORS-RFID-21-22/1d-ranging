@@ -7,13 +7,14 @@
 %     error_data
 %   num_detected_samples
 %   num_true_detected_samples
-%     true_mean_data
-%     true_stdv_data
-%     true_error_data
+%     true_mean_data            - without false detections
+%     true_stdv_data            - without false detections
+%     true_error_data           - without false detections
 %   prob_detect
 %   false_alarm
 %   range_offset
 %   corrected_false_det_data
+%   error_normalized
 
 % cftool
 % '../../data-orss-measurements/030222 1D Ranging/full-data-range 030422.csv'
@@ -102,7 +103,7 @@ for ind = 1:size(data,2)
     false_alarm(ind) = fake / total;
 end
 
-range_offset = mean(true_error_data);
+range_offset = mean(true_error_data(1:end-1));
 corrected_false_det_data = {};
 for ind = 1:num_ranges
     corrected_false_det_data{end+1} = false_det_data{ind} - range_offset;
@@ -192,14 +193,27 @@ display(range_offset);
 % -------------------------------------------------------------------------
 % RANGE - PROBABILITY OF DETECTION (PER RANGE)
 % -------------------------------------------------------------------------
+
+% prob_detect(isnan(prob_detect)) = 0;
+% mycurve = fit(ranges', prob_detect', "exp1");
+% display(mycurve);
+% plot(mycurve); hold on;
+temprange = ranges;
+temppofd = prob_detect;
+% temprange(end)=[];
+% temppofd(temppofd == 0) = [];
+% plot(ranges,prob_detect,'ob','LineWidth',2);
+
+testcurve = fit(temprange', temppofd', "gauss1");
+display(testcurve);
+
 figure;
-prob_detect(isnan(prob_detect)) = 0;
-mycurve = fit(ranges', prob_detect', "poly2");
-display(mycurve);
-plot(mycurve); hold on;
-plot(ranges,prob_detect,'ob','LineWidth',2);
-hXLabel  = xlabel('Range (cm)');
-hYLabel  = ylabel('Probability of Detection');
+plot(testcurve); hold on;
+plot(temprange,temppofd,'ob','LineWidth',2);
+
+% plot(ranges,prob_detect,'ob','LineWidth',2);
+hXLabel  = xlabel('Range (cm)', 'FontSize', 16);
+hYLabel  = ylabel('Probability of Detection', 'FontSize', 16);
 set(gca, ...
   'Box'         , 'off'     , ...
   'TickDir'     , 'out'     , ...
@@ -213,7 +227,9 @@ set(gca, ...
   'XTick'       , [0,ranges,100], ...
   'YTick'       , 0:0.1:1, ...
   'LineWidth'   , 2         );
-legend(gca, 'off');
+% legend(gca, 'off');
+legend('Gaussian Fitted Curve', 'Data Points');
+
 % https://www.mathworks.com/help/curvefit/curve-fitting.html
 % https://www.mathworks.com/help/curvefit/list-of-library-models-for-curve-and-surface-fitting.html
 % https://www.mathworks.com/help/curvefit/fit.html#bto2vuv-1-fitType
@@ -223,8 +239,8 @@ legend(gca, 'off');
 % -------------------------------------------------------------------------
 figure;
 plot(ranges,false_alarm,'ob','LineWidth',2);
-hXLabel  = xlabel('Range (cm)');
-hYLabel  = ylabel('Probability of False Alarm');
+hXLabel  = xlabel('Range (cm)', 'FontSize', 16);
+hYLabel  = ylabel('Probability of False Alarm', 'FontSize', 16);
 set(gca, ...
   'Box'         , 'off'     , ...
   'TickDir'     , 'out'     , ...
@@ -243,9 +259,14 @@ set(gca, ...
 % RANGE - AVERAGE ERROR PER RANGE 
 % -------------------------------------------------------------------------
 figure;
-plot(ranges,error_data,'-ob','LineWidth',2);
-hXLabel  = xlabel('Range (cm)');
-hYLabel  = ylabel('Average Error (m)');
+error_normalized = error_data-range_offset;
+plot(ranges,error_normalized,'-ob','LineWidth',2);
+% plot(ranges,true_error_data,'-ob','LineWidth',2);
+hXLabel  = xlabel('Range (cm)', 'FontSize', 16);
+hYLabel  = ylabel('Average Error (m)', 'FontSize', 16);
+values = min(error_normalized)*2:(max(error_normalized)-min(error_normalized))/5:max(error_normalized)*2;
+% values(end+1) = 0;
+% values = sort(values);
 set(gca, ...
   'Box'         , 'off'     , ...
   'TickDir'     , 'out'     , ...
@@ -257,9 +278,10 @@ set(gca, ...
   'XColor'      , [.3 .3 .3], ...
   'YColor'      , [.3 .3 .3], ...
   'XTick'       , [0,ranges,100], ...
-  'YTick'       , min(error_data)/2:(max(error_data)-min(error_data))/5:max(error_data)*2, ...
+  'YTick'       , -0.0125:0.0025:0.0125, ...
   'LineWidth'   , 2         );
 
+%{
 % commented out 3/31/22 - not needed in paper
 % % -------------------------------------------------------------------------
 % % RANGE - SCATTER OF SAMPLES (PER RANGE)
@@ -324,3 +346,87 @@ set(gca, ...
 % groupcounts
 % https://www.mathworks.com/matlabcentral/answers/96504-how-can-i-count-the-occurrences-of-each-element-in-a-vector-in-matlab
 % https://www.mathworks.com/help/matlab/ref/scatter.html
+
+%}
+
+%{
+%% POST-PROC (PLOTTING MANIP)
+
+log_prob_detect = log(temppofd);
+% testcurve = fit(temprange', log_prob_detect', "poly1");
+coeff = polyfit(temprange, log_prob_detect,1);
+% display(testcurve)
+% figure;
+% plot(temprange, temppofd, temprange, log_prob_detect);
+
+
+%%
+% -------------------------------------------------------------------------
+% LINEAR PLOT - LOG PROB DETECTION
+% -------------------------------------------------------------------------
+% testcurve = 
+%      Linear model Poly1:
+%      testcurve(x) = p1*x + p2
+%      Coefficients (with 95% confidence bounds):
+%        p1 =   -0.008863  (-0.01086, -0.006864)
+%        p2 =      0.1342  (0.02508, 0.2434)
+% figure;
+% plot(temprange, temppofd);
+bestFitx = 0:0.1:100;
+% y = -0.008863 * x + 0.1342 + (0.9993-0.08992); % account for offset
+bestFity = coeff(1)*bestFitx + coeff(2) + ...
+    (temppofd(1) - (coeff(1)*temprange(1) + coeff(2)));
+
+figure;
+plot(bestFitx, bestFity); hold on;
+plot(temprange,log_prob_detect+temppofd(1),'ob','LineWidth',2);
+
+% plot(ranges,prob_detect,'ob','LineWidth',2);
+hXLabel  = xlabel('Range (cm)');
+hYLabel  = ylabel('Probability of Detection');
+set(gca, ...
+  'Box'         , 'off'     , ...
+  'TickDir'     , 'out'     , ...
+  'TickLength'  , [.03 .03] , ...
+  'XMinorTick'  , 'off'      , ...
+  'YMinorTick'  , 'off'      , ...
+  'XGrid'       , 'on'      , ...
+  'YGrid'       , 'on'      , ...
+  'XColor'      , [.3 .3 .3], ...
+  'YColor'      , [.3 .3 .3], ...
+  'XTick'       , [0,ranges,100], ...
+  'YTick'       , 0:0.1:1, ...
+  'LineWidth'   , 2         );
+legend(gca, 'off');
+
+%% 
+% -> copied above <-
+% -------------------------------------------------------------------------
+% POLYNOMIAL PLOT - LINEAR PROB DETECTION
+% -------------------------------------------------------------------------
+testcurve = fit(temprange', temppofd', "gauss1");
+display(testcurve);
+
+figure;
+plot(testcurve); hold on;
+plot(temprange,temppofd,'ob','LineWidth',2);
+
+% plot(ranges,prob_detect,'ob','LineWidth',2);
+hXLabel  = xlabel('Range (cm)');
+hYLabel  = ylabel('Probability of Detection');
+set(gca, ...
+  'Box'         , 'off'     , ...
+  'TickDir'     , 'out'     , ...
+  'TickLength'  , [.03 .03] , ...
+  'XMinorTick'  , 'off'      , ...
+  'YMinorTick'  , 'off'      , ...
+  'XGrid'       , 'on'      , ...
+  'YGrid'       , 'on'      , ...
+  'XColor'      , [.3 .3 .3], ...
+  'YColor'      , [.3 .3 .3], ...
+  'XTick'       , [0,ranges,100], ...
+  'YTick'       , 0:0.1:1, ...
+  'LineWidth'   , 2         );
+legend(gca, 'off');
+
+%}
