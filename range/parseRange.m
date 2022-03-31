@@ -193,6 +193,10 @@ display(range_offset);
 % RANGE - PROBABILITY OF DETECTION (PER RANGE)
 % -------------------------------------------------------------------------
 figure;
+prob_detect(isnan(prob_detect)) = 0;
+mycurve = fit(ranges', prob_detect', "poly2");
+display(mycurve);
+plot(mycurve); hold on;
 plot(ranges,prob_detect,'ob','LineWidth',2);
 hXLabel  = xlabel('Range (cm)');
 hYLabel  = ylabel('Probability of Detection');
@@ -209,10 +213,7 @@ set(gca, ...
   'XTick'       , [0,ranges,100], ...
   'YTick'       , 0:0.1:1, ...
   'LineWidth'   , 2         );
-prob_detect(isnan(prob_detect)) = 0;
-mycurve = fit(ranges', prob_detect', "poly2");
-display(mycurve);
-hold on; plot(mycurve);
+legend(gca, 'off');
 % https://www.mathworks.com/help/curvefit/curve-fitting.html
 % https://www.mathworks.com/help/curvefit/list-of-library-models-for-curve-and-surface-fitting.html
 % https://www.mathworks.com/help/curvefit/fit.html#bto2vuv-1-fitType
