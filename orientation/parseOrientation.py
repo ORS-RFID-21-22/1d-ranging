@@ -20,7 +20,7 @@ rangeValMapping = { 5:0.1307861328125135,
 					90:0.9939746093750088,
 					95:1.0462890625000085 }
 
-angleInd = { -30:0,
+angleInd = { # -30:0,
 			 -25:1,
 			 -20:2,
 			 -15:3,
@@ -31,8 +31,8 @@ angleInd = { -30:0,
 			  10:8,
 			  15:9,
 			  20:10,
-			  25:11,
-			  30:12 }
+			  25:11 }
+			  # 30:12 }
 
 import os
 import csv
@@ -49,7 +49,8 @@ directory = os.getcwd() # gets current directory of file
 # temporary to store all samples for all ranges
 DATA_ARRAY = []
 
-angles = [-30,-25,-20,-15,-10,-5,0,5,10,15,20,25,30]
+# angles = [-30,-25,-20,-15,-10,-5,0,5,10,15,20,25,30]
+angles = [-25,-20,-15,-10,-5,0,5,10,15,20,25]
 
 # first index of each array is its range
 # second index of each array is total number of samples

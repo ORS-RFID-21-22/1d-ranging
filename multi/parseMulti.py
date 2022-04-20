@@ -18,19 +18,11 @@ rangeValMapping = { 5:0.1307861328125135,
 					90:0.9939746093750088,
 					95:1.0462890625000085 }
 
-angleInd = { -30:0,
-			 -25:1,
-			 -20:2,
-			 -15:3,
-			 -10:4,
-			  -5:5,
-			   0:6,
-			   5:7,
-			  10:8,
-			  15:9,
-			  20:10,
-			  25:11,
-			  30:12 }
+offsetInd = { -10:0,
+			  -5:1,
+			   0:2,
+			   5:3,
+			  10:4 }
 
 import os
 import csv
@@ -47,14 +39,17 @@ directory = os.getcwd() # gets current directory of file
 # temporary to store all samples for all ranges
 DATA_ARRAY = []
 
-angles = [-30,-25,-20,-15,-10,-5,0,5,10,15,20,25,30]
+offsets = [-10, -5, 0, 5, 10]
 
 # first index of each array is its range
 # second index of each array is total number of samples
-for idx, key in enumerate(angles):
+for idx, key in enumerate(offsets):
+	arr = [20]
+	DATA_ARRAY.append(arr)
+	DATA_ARRAY[idx*2].append(0) # placeholder for total samples
 	arr = [key]
 	DATA_ARRAY.append(arr)
-	DATA_ARRAY[idx].append(0) # placeholder for total samples
+	DATA_ARRAY[idx*2+1].append(0) # placeholder for total samples
 
 print_num_times = input('How many prints would you like? ') # debug
 
@@ -84,7 +79,7 @@ for filename in os.listdir(directory):
 
 		# if second char is a 'c' then we're looking at 5cm
 		# else get the first 2 digits of the filename as the range
-		file_angle = int(filename.split('deg')[0])
+		file_offset = int(filename.split('dev')[0])
 
 		# check if file has multiple log sets
 		if (file_string.count('Reset count') == 0):
@@ -105,10 +100,11 @@ for filename in os.listdir(directory):
 			files_insufficientSamples.append(filename)
 			num_insufficientSamples.append(str(file_string.count('num detected')))
 
-		# handle older versions with 1001 'tag range: ' detections
-		# remove single extra detection before 'reached max count'
-		if (file_string.count('tag range: ') > 1000):
-			file_string = file_string.rsplit('tag range: ', 1)[0]
+		# woops always ignored the last sample. 4/20/22
+		# # handle older versions with 1001 'tag range: ' detections
+		# # remove single extra detection before 'reached max count'
+		# if (file_string.count('tag range: ') > 1000):
+		# 	file_string = file_string.rsplit('tag range: ', 1)[0]
 
 
 		######################################################
@@ -117,9 +113,14 @@ for filename in os.listdir(directory):
 
 		# PARSING TO CSV
 		if not isProblemFile:
+
+			ind_base = offsetInd.get(file_offset)*2 # 20cm tag measurement
+			ind_offset = ind_base+1 # deviated tag measurement
+
 			# add total number of samples from this log to the overall data array
 			# placed in second index of the corresponding file range array
-			DATA_ARRAY[angleInd.get(file_angle)][1] = DATA_ARRAY[angleInd.get(file_angle)][1] + file_string.count('num detected')
+			DATA_ARRAY[ind_base][1] = DATA_ARRAY[ind_base][1] + file_string.count('num detected')
+			DATA_ARRAY[ind_offset][1] = DATA_ARRAY[ind_base][1] # could take out and leave as 0
 
 			# look at each line in all samples
 			sample_lines = file_string.split('\n')
@@ -131,7 +132,9 @@ for filename in os.listdir(directory):
 				else:
 					# get range value on each line and convert to float in DATA_ARRAY
 					sample_lines[idx] = sample_lines[idx].split('tag range: ')[-1]
-					DATA_ARRAY[angleInd.get(file_angle)].append(float(sample_lines[idx]))
+					temp_vals = sample_lines[idx].split(',') # [ 20cm measurement, dev measurement ]
+					DATA_ARRAY[ind_base].append(float(temp_vals[0]))
+					DATA_ARRAY[ind_offset].append(float(temp_vals[1]))
 
 					# will always have commas separating the ranges
 					# e.g., for n tag frequencies, n-1 commas such that <n detections shows
