@@ -1,15 +1,21 @@
 File name: '../../data-orss-measurements/041822 1D Multitag Ranging/test-data-mult 041822.csv'
 
+relative_percent_error =
+
+   -0.0555   -0.0555   -0.0555    0.0752   -0.0555
+   -0.0529    0.0319    0.0283    0.0223    0.0103
+
+
 max_rel_percent_err =
 
-    0.4811
-    0.0636
+    0.0752
+    0.0529
 
 
 min_rel_percent_err =
 
-    0.0523
-    0.0583
+    0.0555
+    0.0103
 
 
 max_stdev =
@@ -109,7 +115,7 @@ true_stdev_data =
 
 true_error_data =
 
-    0.1361    0.1477    0.1462    0.1593    0.1433
+   -0.0639   -0.0023    0.0462    0.1093    0.1433
     0.1662    0.1383    0.0876    0.0354   -0.0172
 
 
@@ -127,9 +133,9 @@ false_alarm =
 
 range_offset_1 =
 
-    0.1473
+    0.0465
 
 
 range_offset_2 =
 
-    0.1069
+    0.0821

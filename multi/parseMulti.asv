@@ -1,10 +1,10 @@
 % VARIABLES
 %   offsets
 %     num_samples_per_offset
-%     mode_data
-%     mean_data
-%     stdev_data
-%     error_data
+%     mode_data [ 20cm; dev ]
+%     mean_data [ 20cm; dev ]
+%     stdev_data [ 20cm; dev ]
+%     error_data [ 20cm; dev ]
 %   num_detected_samples
 %   num_true_detected_samples
 %     true_mean_data            - without false detections
@@ -17,15 +17,15 @@
 %   error_normalized
 
 % cftool
-% '../../data-orss-measurements/041822 1D Multitag Ranging/full-data-orientation 030422.csv
+% '../../data-orss-measurements/041822 1D Multitag Ranging/test-data-mult 041822.csv'
 
 clc; clear; close all;
 
 imported_data = csvread(input('File name: ')); % csvread('trial1.csv');
 num_offsets = size(imported_data, 1) / 2;
 
-data = {};
 base_data = {};
+data = {};
 
 % everything is ordered, 5 to 95
 offsets = NaN(1,num_offsets);
@@ -35,101 +35,140 @@ mean_data = NaN(2,num_offsets); % [ 20cm; dev ]
 stdev_data = NaN(2,num_offsets); % [ 20cm; dev ]
 error_data = NaN(2,num_offsets); % [ 20cm; dev ]
 
-% separate imported data and collect high level stats
 for ind = 1:num_offsets
     % get index0 - range
-    offsets(ind) = imported_data(ind*2+1,1);
-    
+    offsets(ind) = imported_data(ind*2,1);
+end
+
+base_correct = 0.2*ones(1,5);
+offset_correct = base_correct - offsets./100;
+
+% separate imported data and collect high level stats
+
+for ind = 1:num_offsets
     % get index1 - number of samples
-    num_samples_per_offset(ind) = imported_data(ind*2+1,2);
+    num_samples_per_offset(ind) = imported_data(ind*2,2);
     
     % vertically concatenate sample values, removing 0s
-    concise_samples = imported_data(ind*2+1,3:end);
+    concise_samples = imported_data(ind*2,3:end);
     concise_samples(concise_samples == 0) = [];
     data{end+1} = concise_samples;
     
-    % same as above but for the static tag (2
-    concise_samples = imported_data(ind,3:end);
+    % same as above but for the static tag (20cm)
+    concise_samples = imported_data(ind*2-1,3:end);
     concise_samples(concise_samples == 0) = [];
-    data{end+1} = concise_samples;
+    base_data{end+1} = concise_samples;
     
     % collect full-sample statistics
-    mode_data(ind) = mode(data{end});
-    mean_data(ind) = mean(data{end});
-    stdev_data(ind) = std(data{end});
-    error_data(ind) = mean_data(ind) - offsets(ind)/100;
+    mode_data(1,ind) = mode(base_data{end});
+    mode_data(2,ind) = mode(data{end});
+    mean_data(1,ind) = mean(base_data{end});
+    mean_data(2,ind) = mean(data{end});
+    stdev_data(1,ind) = std(base_data{end});
+    stdev_data(2,ind) = std(data{end});
+    error_data(1,ind) = mean_data(1,ind) - base_correct(ind);
+    error_data(2,ind) = mean_data(2,ind) - offset_correct(ind);
 end
 
 % get number of detections per range
+% FOR MULTI: ALL TAGS DETECTED (built into mmWave demo script)
 num_detected_samples = NaN(1,num_offsets);
 for ind = 1:size(data,2)
     num_detected_samples(ind) = size(data{ind},2);
 end
 
 % store data set containing false positives
+false_det_base_data = base_data;
 false_det_data = data;
 
 % remove false detections per range
 % get number of true detections per range
 % get true mean and stdev per range (after removing false alarms)
-num_true_detected_samples = NaN(1,num_offsets);
-true_mean_data = NaN(1,num_offsets);
-true_stdev_data = NaN(1,num_offsets);
-true_error_data = NaN(1,num_offsets);
-for range_ind = 1:size(data,2)
+num_true_detected_samples = NaN(2,num_offsets);
+true_mean_data = NaN(2,num_offsets);
+true_stdev_data = NaN(2,num_offsets);
+true_error_data = NaN(2,num_offsets);
+for offset_ind = 1:size(data,2)
     % bin range error is [-0.0275, 0.0275]
-    minSamp = mode_data(range_ind) - 0.0275;
-    maxSamp = mode_data(range_ind) + 0.0275;
+    minSamp = mode_data(1,offset_ind) - 0.0275;
+    maxSamp = mode_data(1,offset_ind) + 0.0275;
         
-    for sample_ind = flip(1:size(data{range_ind},2)) % back-iterate
-        sample = data{range_ind}(sample_ind);
+    for sample_ind = flip(1:size(base_data{offset_ind},2)) % back-iterate
+        sample = base_data{offset_ind}(sample_ind);
         
         if (~((sample >=minSamp) && (sample <= maxSamp)))
-            data{range_ind}(sample_ind) = [];
+            base_data{offset_ind}(sample_ind) = [];
         end
     end
     
-    num_true_detected_samples(range_ind) = size(data{range_ind},2);
-    true_mean_data(range_ind) = mean(data{range_ind});
-    true_stdev_data(range_ind) = std(data{range_ind});
-    true_error_data(range_ind) = ...
-        true_mean_data(range_ind) - offsets(range_ind)/100;
+    num_true_detected_samples(1,offset_ind) = size(base_data{offset_ind},2);
+    true_mean_data(1,offset_ind) = mean(base_data{offset_ind});
+    true_stdev_data(1,offset_ind) = std(base_data{offset_ind});
+    true_error_data(1,offset_ind) = ...
+        true_mean_data(1,offset_ind) - offset_correct(offset_ind);
+    
+    
+    
+    minSamp = mode_data(2,offset_ind) - 0.0275;
+    maxSamp = mode_data(2,offset_ind) + 0.0275;
+    
+    for sample_ind = flip(1:size(data{offset_ind},2)) % back-iterate
+        sample = data{offset_ind}(sample_ind);
+        
+        if (~((sample >=minSamp) && (sample <= maxSamp)))
+            data{offset_ind}(sample_ind) = [];
+        end
+    end
+    
+    num_true_detected_samples(2,offset_ind) = size(data{offset_ind},2);
+    true_mean_data(2,offset_ind) = mean(data{offset_ind});
+    true_stdev_data(2,offset_ind) = std(data{offset_ind});
+    true_error_data(2,offset_ind) = ...
+        true_mean_data(2,offset_ind) - base_correct(offset_ind);
 end
 
 % calculate probability of detection
 % calculate probability of false alarm
-prob_detect = NaN(1,num_offsets);
-false_alarm = NaN(1,num_offsets);
+prob_detect = NaN(2,num_offsets); % single value per offset
+false_alarm = NaN(2,num_offsets);
 for ind = 1:size(data,2)
     total = num_samples_per_offset(ind);
-    actual = num_true_detected_samples(ind);
-    fake = num_detected_samples(ind) - num_true_detected_samples(ind);
+    actual_1 = num_true_detected_samples(1,ind);
+    actual_2 = num_true_detected_samples(2,ind);
+    fake_1 = num_detected_samples(ind) - num_true_detected_samples(1,ind);
+    fake_2 = num_detected_samples(ind) - num_true_detected_samples(2,ind);
     
-    prob_detect(ind) = actual / total;
-    false_alarm(ind) = fake / total;
+    prob_detect(1,ind) = actual_1 / total;
+    prob_detect(2,ind) = actual_2 / total;
+    false_alarm(1,ind) = fake_1 / total;
+    false_alarm(2,ind) = fake_2 / total;
 end
 
-range_offset = mean(true_error_data(1:end-1));
+% 0.2876 - 20cm base value from ../range/range-data-values 033122.txt
+range_offset_1 = mean(true_error_data(1,1:end-1));
+range_offset_2 = mean(true_error_data(2,1:end-1));
+corrected_false_det_base_data = {};
 corrected_false_det_data = {};
 for ind = 1:num_offsets
-    corrected_false_det_data{end+1} = false_det_data{ind} - range_offset;
+    corrected_false_det_base_data{end+1} = false_det_base_data{ind} - range_offset_1;
+    corrected_false_det_data{end+1} = false_det_data{ind} - range_offset_2;
 end
 
-% calculate intensities of each unique "range" measurement
-intensities = {};
-smallest_intensity = -1;
-for ind = 1:num_offsets
-    % unique_measurements = unique(corrected_false_det_data{range_ind});
-    % count_per_val = NaN(1,size(unique_measurements));
-    % for unique_ind = 1:unique_measurements
-    %     unique_val = unique_measurements(unique_ind);
-    %     count_per_val(unique_ind) = 
-    % end
-    % intensities{end+1} = []
-    [count,val] = groupcounts(corrected_false_det_data{ind}');
-    intensities{end+1} = count / sum(count);
-    smallest_intensity = min([ smallest_intensity, intensities{end}' ]);
-end
+% % % calculate intensities of each unique "range" measurement
+% % intensities = {};
+% % smallest_intensity = -1;
+% % for ind = 1:num_offsets
+% %     % unique_measurements = unique(corrected_false_det_data{range_ind});
+% %     % count_per_val = NaN(1,size(unique_measurements));
+% %     % for unique_ind = 1:unique_measurements
+% %     %     unique_val = unique_measurements(unique_ind);
+% %     %     count_per_val(unique_ind) = 
+% %     % end
+% %     % intensities{end+1} = []
+% %     [count,val] = groupcounts(corrected_false_det_data{ind}');
+% %     intensities{end+1} = count / sum(count);
+% %     smallest_intensity = min([ smallest_intensity, intensities{end}' ]);
+% % end
 
 % % trying to calculate log intensity
 % % produces a pretty shawty graph
@@ -141,21 +180,24 @@ end
 % end
 
 %% STATS
+% sussy baka
 
-absolute_corrected_error = mode_data - range_offset;
-relative_percent_error = (absolute_corrected_error - offsets./100) ...
-    / (offsets ./ 100);
+absolute_corrected_error = [ mode_data(1,:)-range_offset_1;
+                             mode_data(2,:)-range_offset_2 ];
+relative_percent_error = ...
+    (absolute_corrected_error - [ base_correct;offset_correct ]) ...
+    / ([ base_correct;offset_correct ]);
 
-max_rel_percent_err = max(relative_percent_error)
-min_rel_percent_err = min(relative_percent_error)
+max_rel_percent_err = max(abs(relative_percent_error),[],2) % max by row instead of by col
+min_rel_percent_err = min(abs(relative_percent_error),[],2) % max by row instead of by col
 
-max_stdev = max(stdev_data)
-min_stdev = min(stdev_data)
+max_stdev = max(stdev_data,[],2) % max by row instead of by col
+min_stdev = min(stdev_data,[],2) % max by row instead of by col
 
-max_prob_det = max(prob_detect)
-min_prob_det = min(prob_detect)
-max_fa = max(false_alarm)
-min_fa = min(false_alarm)
+max_prob_det = max(prob_detect,[],2)
+min_prob_det = min(prob_detect,[],2)
+max_fa = max(false_alarm,[],2)
+min_fa = min(false_alarm,[],2)
 
 
 %% PRINTING VALUES
@@ -173,8 +215,11 @@ display(true_stdev_data);
 display(true_error_data);
 display(prob_detect);
 display(false_alarm);
-display(range_offset);
-
+display(range_offset_1);
+display(range_offset_2);
+ 
+%{
+        MULTI-TRIAL BRACKETING
 %% PLOTTING
 
 % REFERENCE
@@ -435,4 +480,6 @@ set(gca, ...
   'LineWidth'   , 2         );
 legend(gca, 'off');
 
-%}
+  %}
+MULTI-TRIAL BRACKETING
+  %}

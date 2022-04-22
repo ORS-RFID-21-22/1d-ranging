@@ -105,7 +105,7 @@ for offset_ind = 1:size(data,2)
     true_mean_data(1,offset_ind) = mean(base_data{offset_ind});
     true_stdev_data(1,offset_ind) = std(base_data{offset_ind});
     true_error_data(1,offset_ind) = ...
-        true_mean_data(1,offset_ind) - offset_correct(ind);
+        true_mean_data(1,offset_ind) - offset_correct(offset_ind);
     
     
     
@@ -124,7 +124,7 @@ for offset_ind = 1:size(data,2)
     true_mean_data(2,offset_ind) = mean(data{offset_ind});
     true_stdev_data(2,offset_ind) = std(data{offset_ind});
     true_error_data(2,offset_ind) = ...
-        true_mean_data(2,offset_ind) - base_correct(ind);
+        true_mean_data(2,offset_ind) - base_correct(offset_ind);
 end
 
 % calculate probability of detection
@@ -145,8 +145,10 @@ for ind = 1:size(data,2)
 end
 
 % 0.2876 - 20cm base value from ../range/range-data-values 033122.txt
-range_offset_1 = mean(true_error_data(1,1:end-1));
-range_offset_2 = mean(true_error_data(2,1:end-1));
+range_offset_1 = mean(true_error_data(1,:));
+range_offset_2 = mean(true_error_data(2,:));
+% range_offset_1 = mean(true_error_data(1,1:end-1));
+% range_offset_2 = mean(true_error_data(2,1:end-1));
 corrected_false_det_base_data = {};
 corrected_false_det_data = {};
 for ind = 1:num_offsets
@@ -186,7 +188,7 @@ absolute_corrected_error = [ mode_data(1,:)-range_offset_1;
                              mode_data(2,:)-range_offset_2 ];
 relative_percent_error = ...
     (absolute_corrected_error - [ base_correct;offset_correct ]) ...
-    / ([ base_correct;offset_correct ]);
+    ./ ([ base_correct;offset_correct ])
 
 max_rel_percent_err = max(abs(relative_percent_error),[],2) % max by row instead of by col
 min_rel_percent_err = min(abs(relative_percent_error),[],2) % max by row instead of by col
