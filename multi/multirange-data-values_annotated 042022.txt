@@ -1,0 +1,64 @@
+File name: '../../data-orss-measurements/041822 1D Multitag Ranging/test-data-mult 041822.csv'
+
+max_rel_percent_err =
+    0.0752 - 20cm tag
+    0.0529 - dev tag
+
+max_stdev =
+    0.0136 - 20cm tag
+    0.0187 - dev tag
+
+max_prob_det =
+    0.9390 - 20cm tag
+    0.9396 - dev tag
+
+min_prob_det =
+    0.8509 - 20cm tag
+    0.8520 - dev tag
+
+max_fa =
+    0.0020 - 20cm tag
+    0.0013 - dev tag
+
+offsets =
+   -10    -5     0     5    10          - corresponds to [ 30 25 20 15 10 ]
+
+num_samples_per_offset =
+        7000        7000        7000        7000        7000
+
+mode_data =
+    0.2354    0.2354    0.2354    0.2616    0.2354          - 20cm tag
+    0.3662    0.3400    0.2877    0.2354    0.1831          - dev tag
+
+mean_data =
+    0.2362    0.2479    0.2462    0.2593    0.2433          - 20cm tag
+    0.3666    0.3384    0.2876    0.2356    0.1828          - dev tag
+
+stdev_data =
+    0.0110    0.0136    0.0129    0.0113    0.0121          - 20cm tag
+    0.0142    0.0071    0.0018    0.0187    0.0026          - dev tag
+
+error_data =
+    0.0362    0.0479    0.0462    0.0593    0.0433          - 20cm tag
+    0.0666    0.0884    0.0876    0.0856    0.0828          - dev tag
+
+num_detected_samples =
+        6375        6586        6311        6387        5964
+
+num_true_detected_samples =
+        6361        6573        6303        6380        5956          - 20cm tag
+        6368        6577        6311        6380        5964          - dev tag
+
+prob_detect =
+    0.9087    0.9390    0.9004    0.9114    0.8509
+    0.9097    0.9396    0.9016    0.9114    0.8520
+
+false_alarm =
+    0.0020    0.0019    0.0011    0.0010    0.0011
+    0.0010    0.0013         0    0.0010         0
+
+range_offset_1 =
+    0.0465 - 20cm tag
+
+range_offset_2 =
+    0.0821 - dev tag
