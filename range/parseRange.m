@@ -17,7 +17,7 @@
 %   error_normalized
 
 % cftool
-% '../../data-orss-measurements/030222 1D Ranging/full-data-range 030422.csv'
+% '../../data-orss-measurements/032922 1D Ranging/range-new-peak-corrected35-no95 033122.csv'
 
 clc; clear; close all;
 
@@ -204,10 +204,12 @@ temppofd = prob_detect;
 % temppofd(temppofd == 0) = [];
 % plot(ranges,prob_detect,'ob','LineWidth',2);
 
-testcurve = fit(temprange', temppofd', "gauss1");
+% https://www.mathworks.com/matlabcentral/answers/608481-constrain-a-parameter-in-a-fit
+testcurve = fit(temprange', temppofd', "gauss1", 'lower',1,'upper',1);
 display(testcurve);
 
 figure;
+% plot(0:0.01:90,exp(-(((0:0.01:90)+17.43)./121).^2),'r'); hold on;
 plot(testcurve); hold on;
 plot(temprange,temppofd,'ob','LineWidth',2);
 

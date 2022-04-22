@@ -7,7 +7,7 @@
 %   prob_detect
 %   false_alarm
 
-%  '../../data-orss-measurements/030422 1D Orientation/full-data-orientation 030422.csv'
+%  '../../data-orss-measurements/040522 1D Orientation/full-data-orientation 040622.csv'
 
 clc; clear; close all;
 
@@ -140,7 +140,7 @@ set(gca, ...
 % -------------------------------------------------------------------------
 figure;
 plot(angles,false_alarm,'ob','LineWidth',2);
-hXLabel  = xlabel('Angle (Degrees)', 'FontSize', 16);
+hXLabel  = xlabel('Angle (degrees)', 'FontSize', 16);
 hYLabel  = ylabel('Probability of False Alarm', 'FontSize', 16);
 set(gca, ...
   'Box'         , 'off'     , ...
